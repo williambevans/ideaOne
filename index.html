@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TitleChain Knowledge Map: Parcel of Land</title>
+    
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 20px;
+            font-size: 22px;
+        }
+        svg {
+            width: 100%;
+            height: 85vh;
+            background-color: #222;
+            display: block;
+        }
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+        .label {
+            font-size: 12px;
+            fill: #fff;
+        }
+        @media (max-width: 600px) {
+            h2 { font-size: 18px; }
+            .label { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>TitleChain Knowledge Map: Parcel of Land & Its Records</h2>
+    
+    <svg></svg>
+
+    <script>
+        const width = window.innerWidth;
+        const height = window.innerHeight * 0.85;
+
+        const svg = d3.select("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const nodes = [
+            { id: "Parcel of Land (Current State)", group: "central" },
+            { id: "Ownership History", group: "category" },
+            { id: "Previous Owners", group: "sub" },
+            { id: "Title Transfers", group: "sub" },
+            { id: "Encumbrances", group: "sub" },
+            { id: "Geospatial Data", group: "category" },
+            { id: "Lot Boundaries", group: "sub" },
+            { id: "Topography", group: "sub" },
+            { id: "Zoning Information", group: "sub" },
+            { id: "Legal & Title Data", group: "category" },
+            { id: "Title Insurance", group: "sub" },
+            { id: "Easements & Rights", group: "sub" },
+            { id: "Outstanding Liens", group: "sub" },
+            { id: "Surrounding Infrastructure", group: "category" },
+            { id: "Roadways & Lanes", group: "sub" },
+            { id: "Utility Lines", group: "sub" },
+            { id: "Flood Zones", group: "sub" },
+            { id: "Transaction & Future Use", group: "category" },
+            { id: "Current Market Value", group: "sub" },
+            { id: "Planned Developments", group: "sub" },
+            { id: "Potential Buyers", group: "sub" },
+        ];
+
+        const links = [
+            { source: "Parcel of Land (Current State)", target: "Ownership History" },
+            { source: "Ownership History", target: "Previous Owners" },
+            { source: "Ownership History", target: "Title Transfers" },
+            { source: "Ownership History", target: "Encumbrances" },
+            { source: "Parcel of Land (Current State)", target: "Geospatial Data" },
+            { source: "Geospatial Data", target: "Lot Boundaries" },
+            { source: "Geospatial Data", target: "Topography" },
+            { source: "Geospatial Data", target: "Zoning Information" },
+            { source: "Parcel of Land (Current State)", target: "Legal & Title Data" },
+            { source: "Legal & Title Data", target: "Title Insurance" },
+            { source: "Legal & Title Data", target: "Easements & Rights" },
+            { source: "Legal & Title Data", target: "Outstanding Liens" },
+            { source: "Parcel of Land (Current State)", target: "Surrounding Infrastructure" },
+            { source: "Surrounding Infrastructure", target: "Roadways & Lanes" },
+            { source: "Surrounding Infrastructure", target: "Utility Lines" },
+            { source: "Surrounding Infrastructure", target: "Flood Zones" },
+            { source: "Parcel of Land (Current State)", target: "Transaction & Future Use" },
+            { source: "Transaction & Future Use", target: "Current Market Value" },
+            { source: "Transaction & Future Use", target: "Planned Developments" },
+            { source: "Transaction & Future Use", target: "Potential Buyers" },
+        ];
+
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(120))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const link = svg.selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .style("stroke", "#aaa")
+            .style("stroke-width", 2);
+
+        const node = svg.selectAll("circle")
+            .data(nodes)
+            .enter().append("circle")
+            .attr("r", d => d.group === "central" ? 15 : 8)
+            .attr("fill", d => {
+                if (d.group === "central") return "red";
+                if (d.group === "category") return "blue";
+                return "yellow";
+            })
+            .call(drag(simulation));
+
+        const label = svg.selectAll("text")
+            .data(nodes)
+            .enter().append("text")
+            .attr("class", "label")
+            .attr("dy", 5)
+            .attr("text-anchor", "middle")
+            .text(d => d.id);
+
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            label.attr("x", d => d.x)
+                .attr("y", d => d.y - 10);
+        });
+
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+    </script>
+
+</body>
+</html>
